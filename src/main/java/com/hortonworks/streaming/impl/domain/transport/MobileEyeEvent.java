@@ -29,6 +29,10 @@ public class MobileEyeEvent extends Event {
 	public Location getLocation() {
 		return location;
 	}
+	
+	public Truck getTruck() {
+		return this.truck;
+	}
 
 	@Override
 	public String toString() {

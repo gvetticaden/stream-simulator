@@ -24,7 +24,7 @@ public class App {
 				final ActorRef listener = system.actorOf(
 						Props.create(SimulatorListener.class), "listener");
 				final ActorRef eventCollector = system.actorOf(
-						Props.create(eventCollectorClass), "eventCollector");
+						Props.create(eventCollectorClass, numberOfEvents), "eventCollector");
 				System.out.println(eventCollector.path());
 				final ActorRef master = system.actorOf(new Props(
 						new UntypedActorFactory() {
