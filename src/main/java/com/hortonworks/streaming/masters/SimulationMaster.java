@@ -24,7 +24,7 @@ public class SimulationMaster extends UntypedActor {
 
 	@SuppressWarnings("unchecked")
 	public SimulationMaster(int numberOfEventEmitters, Class eventEmitterClass,
-			ActorRef listener) {
+			ActorRef listener, int numberOfEvents, long demoId) {
 		logger.info("Starting simulation with " + numberOfEventEmitters
 				+ " of " + eventEmitterClass + " Event Emitters -- "
 				+ eventEmitterClass.toString());
@@ -32,7 +32,7 @@ public class SimulationMaster extends UntypedActor {
 		this.numberOfEventEmitters = numberOfEventEmitters;
 		this.eventEmitterClass = eventEmitterClass;
 		eventEmitterRouter = this.getContext().actorOf(
-				Props.create(eventEmitterClass).withRouter(
+				Props.create(eventEmitterClass, numberOfEvents, demoId).withRouter(
 						new RoundRobinRouter(numberOfEventEmitters)),
 				"eventEmitterRouter");
 	}
@@ -47,8 +47,8 @@ public class SimulationMaster extends UntypedActor {
 			}
 		} else if (message instanceof StopSimulation) {
 			listener.tell(new SimulationResultsSummary(eventCount), getSelf());
-			this.getContext().system().shutdown();
-			System.exit(0);
+//			this.getContext().system().shutdown();
+//			System.exit(0);
 		} else {
 			logger.debug("Received message I'm not sure what to do with: "
 					+ message);

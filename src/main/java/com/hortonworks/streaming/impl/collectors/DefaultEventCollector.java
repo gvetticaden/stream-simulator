@@ -8,12 +8,7 @@ public class DefaultEventCollector extends AbstractEventCollector {
 	@Override
 	public void onReceive(Object message) throws Exception {
 		logger.info(message);
-		numberOfEventsProcessed++;
 	}
 
 
-
-	public DefaultEventCollector(int maxNumberOfEvents) {
-		super(maxNumberOfEvents);
-	}
 }

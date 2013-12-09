@@ -17,8 +17,7 @@ public class KafkaEventCollector extends AbstractEventCollector {
 	
 	private Producer<String, String> kafkaProducer;
 
-	public KafkaEventCollector(int maxMessages) {
-		super(maxMessages);
+	public KafkaEventCollector() {
         Properties props = new Properties();
         props.put("metadata.broker.list", "gvetticaden-kafka-cluster.secloud.hortonworks.com:9092,gvetticaden-kafka-cluster2.secloud.hortonworks.com:9092");
         props.put("serializer.class", "kafka.serializer.StringEncoder");
@@ -47,17 +46,7 @@ public class KafkaEventCollector extends AbstractEventCollector {
 			kafkaProducer.send(data);			
 		} catch (Exception e) {
 			logger.error("Error sending event[" + eventToPass + "] to Kafka queue", e);
-		}
-
-		numberOfEventsProcessed++;
-		if (numberOfEventsProcessed != -1
-				&& numberOfEventsProcessed == maxNumberOfEvents) {
-			logger.info("Maximum number of messages processed, exiting");
-			kafkaProducer.close();
-			this.getContext().system().shutdown();
-			System.exit(0);
-		}
-		
+		}		
 
 	}
 

@@ -10,6 +10,6 @@ public class SimulatorListener extends UntypedActor {
 	public void onReceive(Object message) throws Exception {
 		if (message instanceof SimulationResultsSummary)
 			System.out.println(message.toString());
-		getContext().system().shutdown();
+//		getContext().system().shutdown();
 	}
 }

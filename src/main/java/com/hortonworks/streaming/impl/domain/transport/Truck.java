@@ -25,11 +25,15 @@ public class Truck extends AbstractEventEmitter {
 	private Random rand = new Random();
 	private Path path = new Path();
 	private TimestampedLocation startingPoint = null;
+	private int numberOfEventsToGenerate;
+	private long demoId;
 
-	public Truck() {
+	public Truck(int numberOfEvents, long demoId) {
 		driver = TruckConfiguration.getNextDriver();
 		truckId = TruckConfiguration.getNextTruckId();
 		eventTypes = Arrays.asList(MobileEyeEventTypeEnum.values());
+		this.numberOfEventsToGenerate = numberOfEvents;
+		this.demoId = demoId;
 		if (driver.getStartingPoint() == null)
 			startingPoint = TruckConfiguration.getNextStartingPoint();
 		else
@@ -37,10 +41,7 @@ public class Truck extends AbstractEventEmitter {
 		addWayPoint(startingPoint);
 	}
 
-	public Truck(Driver driver) {
-		this();
-		this.driver = driver;
-	}
+
 
 	public Driver getDriver() {
 		return driver;
@@ -57,12 +58,11 @@ public class Truck extends AbstractEventEmitter {
 				nextLocation));
 		// System.out.println("Truck traveled: " +
 		// path.getOverGroundAverageSpeed() + "MPH");
-		messageCount++;
 		if (messageCount % driver.getRiskFactor() == 0)
-			return new MobileEyeEvent(nextLocation, getRandomUnsafeEvent(),
+			return new MobileEyeEvent(demoId, nextLocation, getRandomUnsafeEvent(),
 					this);
 		else
-			return new MobileEyeEvent(nextLocation,
+			return new MobileEyeEvent(demoId, nextLocation,
 					MobileEyeEventTypeEnum.NORMAL, this);
 	}
 
@@ -106,10 +106,21 @@ public class Truck extends AbstractEventEmitter {
 					.actorFor("akka://EventSimulator/user/eventCollector");
 			Random rand = new Random();
 			int sleepOffset = rand.nextInt(200);
-			while (true) {
-				Thread.sleep(500 + sleepOffset);
-				actor.tell(generateEvent(), this.getSender());
+			if(numberOfEventsToGenerate == -1) {
+				while(true) {
+					messageCount++;
+					Thread.sleep(500 + sleepOffset);
+					actor.tell(generateEvent(), this.getSender());					
+				}
+				
+			} else {
+				while (messageCount < numberOfEventsToGenerate) {
+					messageCount++;
+					Thread.sleep(500 + sleepOffset);
+					actor.tell(generateEvent(), this.getSender());
+				}				
 			}
+
 		}
 	}
 }

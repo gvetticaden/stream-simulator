@@ -7,15 +7,17 @@ public class MobileEyeEvent extends Event {
 	private MobileEyeEventTypeEnum eventType;
 	private Truck truck;
 	private Location location;
+	private long correlationId;
 
 	public MobileEyeEvent() {
 	}
 
-	public MobileEyeEvent(Location location, MobileEyeEventTypeEnum eventType,
+	public MobileEyeEvent(long correlationId, Location location, MobileEyeEventTypeEnum eventType,
 			Truck truck) {
 		this.location = location;
 		this.eventType = eventType;
 		this.truck = truck;
+		this.correlationId = correlationId;
 	}
 
 	public MobileEyeEventTypeEnum getEventType() {
@@ -37,6 +39,6 @@ public class MobileEyeEvent extends Event {
 	@Override
 	public String toString() {
 		return truck.toString() + eventType.toString() + "|"
-				+ location.getLatitude() + "|" + location.getLongitude();
+				+ location.getLatitude() + "|" + location.getLongitude() + "|" + correlationId;
 	}
 }

@@ -39,10 +39,6 @@ public class JmsEventCollector extends AbstractEventCollector {
 		}
 	}
 
-	public JmsEventCollector(int maxEvents) {
-		super(maxEvents);
-	}
-
 	@Override
 	public void onReceive(Object message) throws Exception {
 		logger.info(message);
@@ -54,12 +50,6 @@ public class JmsEventCollector extends AbstractEventCollector {
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
-		numberOfEventsProcessed++;
-		if (numberOfEventsProcessed != -1
-				&& numberOfEventsProcessed == maxNumberOfEvents) {
-			logger.info("Maximum number of messages processed, exiting");
-			this.getContext().system().shutdown();
-			System.exit(0);
-		}
+
 	}
 }
