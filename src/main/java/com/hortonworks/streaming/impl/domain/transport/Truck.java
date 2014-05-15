@@ -14,6 +14,7 @@ import com.hortonworks.streaming.impl.domain.gps.BackToTheFutureException;
 import com.hortonworks.streaming.impl.domain.gps.Location;
 import com.hortonworks.streaming.impl.domain.gps.Path;
 import com.hortonworks.streaming.impl.domain.gps.TimestampedLocation;
+import com.hortonworks.streaming.impl.domain.transport.route.jaxb.Placemark;
 import com.hortonworks.streaming.impl.messages.EmitEvent;
 
 public class Truck extends AbstractEventEmitter {
@@ -27,6 +28,8 @@ public class Truck extends AbstractEventEmitter {
 	private TimestampedLocation startingPoint = null;
 	private int numberOfEventsToGenerate;
 	private long demoId;
+	
+	boolean runWithFixedRoutes;
 
 	public Truck(int numberOfEvents, long demoId) {
 		driver = TruckConfiguration.getNextDriver();
@@ -41,6 +44,11 @@ public class Truck extends AbstractEventEmitter {
 		addWayPoint(startingPoint);
 	}
 
+//	public Truck(List<Placemark> placemarks) {
+//		runWithFixedRoutes = true;
+//		this.placemarks = placemarks;
+//		
+//	}
 
 
 	public Driver getDriver() {
@@ -67,10 +75,15 @@ public class Truck extends AbstractEventEmitter {
 	}
 
 	private Location getNextLocationNearExistingLocation(Location location) {
-		Location nextLocation = new Location(location.getLongitude()
-				+ Math.abs(Math.random() - 0.7), location.getLatitude()
-				+ Math.abs(Math.random() - 0.7), location.getAltitude()
-				+ Math.random());
+		
+		double randomLat = (Math.random() - 0.7D)/40;
+		double randomLong = (Math.random() - 0.7D) /40;
+		Location nextLocation = new Location(location.getLongitude() + randomLong,
+											 location.getLatitude() + randomLat,
+											 location.getAltitude());
+//		Location nextLocation = new Location(location.getLongitude() +  0.02, 
+//											 location.getLatitude() + 0.02, location.getAltitude()
+//				+ Math.random());		
 		return nextLocation;
 	}
 
@@ -116,7 +129,7 @@ public class Truck extends AbstractEventEmitter {
 			} else {
 				while (messageCount < numberOfEventsToGenerate) {
 					messageCount++;
-					Thread.sleep(500 + sleepOffset);
+					Thread.sleep(1000 + sleepOffset);
 					actor.tell(generateEvent(), this.getSender());
 				}				
 			}
