@@ -14,41 +14,36 @@ import com.hortonworks.streaming.impl.domain.gps.BackToTheFutureException;
 import com.hortonworks.streaming.impl.domain.gps.Location;
 import com.hortonworks.streaming.impl.domain.gps.Path;
 import com.hortonworks.streaming.impl.domain.gps.TimestampedLocation;
+import com.hortonworks.streaming.impl.domain.transport.route.Route;
 import com.hortonworks.streaming.impl.domain.transport.route.jaxb.Placemark;
 import com.hortonworks.streaming.impl.messages.EmitEvent;
 
 public class Truck extends AbstractEventEmitter {
+	
 	private static final long serialVersionUID = 9157180698115417087L;
 	private Driver driver;
+	
 	private int truckId;
 	private int messageCount = 0;
+	
 	private List<MobileEyeEventTypeEnum> eventTypes;
+	
 	private Random rand = new Random();
-	private Path path = new Path();
-	private TimestampedLocation startingPoint = null;
+
+	
 	private int numberOfEventsToGenerate;
 	private long demoId;
 	
-	boolean runWithFixedRoutes;
 
 	public Truck(int numberOfEvents, long demoId) {
 		driver = TruckConfiguration.getNextDriver();
 		truckId = TruckConfiguration.getNextTruckId();
 		eventTypes = Arrays.asList(MobileEyeEventTypeEnum.values());
+		
 		this.numberOfEventsToGenerate = numberOfEvents;
 		this.demoId = demoId;
-		if (driver.getStartingPoint() == null)
-			startingPoint = TruckConfiguration.getNextStartingPoint();
-		else
-			startingPoint = driver.getStartingPoint();
-		addWayPoint(startingPoint);
 	}
 
-//	public Truck(List<Placemark> placemarks) {
-//		runWithFixedRoutes = true;
-//		this.placemarks = placemarks;
-//		
-//	}
 
 
 	public Driver getDriver() {
@@ -60,12 +55,8 @@ public class Truck extends AbstractEventEmitter {
 	}
 
 	public MobileEyeEvent generateEvent() {
-		Location nextLocation = getNextLocationNearExistingLocation(path
-				.getFinish().getLocation());
-		addWayPoint(new TimestampedLocation(new GregorianCalendar(),
-				nextLocation));
-		// System.out.println("Truck traveled: " +
-		// path.getOverGroundAverageSpeed() + "MPH");
+
+		Location nextLocation = getDriver().getRoute().getNextLocation();
 		if (messageCount % driver.getRiskFactor() == 0)
 			return new MobileEyeEvent(demoId, nextLocation, getRandomUnsafeEvent(),
 					this);
@@ -74,37 +65,10 @@ public class Truck extends AbstractEventEmitter {
 					MobileEyeEventTypeEnum.NORMAL, this);
 	}
 
-	private Location getNextLocationNearExistingLocation(Location location) {
-		
-		double randomLat = (Math.random() - 0.7D)/40;
-		double randomLong = (Math.random() - 0.7D) /40;
-		Location nextLocation = new Location(location.getLongitude() + randomLong,
-											 location.getLatitude() + randomLat,
-											 location.getAltitude());
-//		Location nextLocation = new Location(location.getLongitude() +  0.02, 
-//											 location.getLatitude() + 0.02, location.getAltitude()
-//				+ Math.random());		
-		return nextLocation;
-	}
-
 	private MobileEyeEventTypeEnum getRandomUnsafeEvent() {
 		return eventTypes.get(rand.nextInt(eventTypes.size() - 1));
 	}
 
-	public Path getPath() {
-		return path;
-	}
-
-	public void setPath(Path path) {
-		this.path = path;
-	}
-
-	private void addWayPoint(TimestampedLocation waypoint) {
-		try {
-			path.addWaypoint(waypoint);
-		} catch (BackToTheFutureException e) {
-		}
-	}
 
 	@Override
 	public String toString() {

@@ -6,6 +6,7 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.actor.UntypedActorFactory;
 
+import com.hortonworks.streaming.impl.domain.transport.TruckConfiguration;
 import com.hortonworks.streaming.impl.messages.StartSimulation;
 import com.hortonworks.streaming.impl.messages.StopSimulation;
 import com.hortonworks.streaming.listeners.SimulatorListener;
@@ -13,13 +14,29 @@ import com.hortonworks.streaming.masters.SimulationMaster;
 
 public class App {
 	public static void main(String[] args) {
-		if (args != null && args.length == 5) {
 			try {
-				final int numberOfEventEmitters = Integer.parseInt(args[0]);
-				final int numberOfEvents = Integer.parseInt(args[1]);
+				
+				int emitters = 0;
+				if(args.length == 5) {
+					TruckConfiguration.initialize();
+					TruckConfiguration.configureInitialDrivers();
+					TruckConfiguration.configureStartingPoints();
+					emitters = Integer.parseInt(args[0]);			
+					
+				} else if(args.length == 6) {
+					String routesDirectory = args[5];
+					TruckConfiguration.initialize(routesDirectory);
+					TruckConfiguration.configureInitialDrivers();
+					TruckConfiguration.configureStartingPoints();
+					emitters=TruckConfiguration.truckRoutes.size();				
+				}
+
+				
 				final Class eventEmitterClass = Class.forName(args[2]);
 				final Class eventCollectorClass = Class.forName(args[3]);
 				final long demoId = Long.parseLong(args[4]);
+				final int numberOfEventEmitters = emitters;
+				final int numberOfEvents = Integer.parseInt(args[1]);	
 
 				ActorSystem system = ActorSystem.create("EventSimulator");
 				final ActorRef listener = system.actorOf(
@@ -47,9 +64,6 @@ public class App {
 			} catch (ClassNotFoundException e) {
 				System.err.println("Cannot find classname: " + e.getMessage());
 			}
-		} else {
-			System.err
-					.println("Please specify the number of event emitters and the class that you would like to use.");
-		}
+		
 	}
 }

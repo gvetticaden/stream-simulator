@@ -9,8 +9,7 @@ public class MobileEyeEvent extends Event {
 	private Location location;
 	private long correlationId;
 
-	public MobileEyeEvent() {
-	}
+
 
 	public MobileEyeEvent(long correlationId, Location location, MobileEyeEventTypeEnum eventType,
 			Truck truck) {
