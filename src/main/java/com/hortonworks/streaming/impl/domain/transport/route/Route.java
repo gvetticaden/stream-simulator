@@ -8,4 +8,6 @@ public interface Route {
 	List<Location> getLocations();
 	Location getNextLocation();
 	Location getStartingPoint();
+	boolean routeEnded();
+	String getRouteName();
 }

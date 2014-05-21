@@ -15,7 +15,7 @@ public class RouteProvided implements Route {
 	private int locationIndex=0;
 	private String routeName;
 	private boolean forward=true;
-
+	private boolean routeEnded=false;
 
 	
 	public RouteProvided (String routeName, List<Location> locations) {
@@ -34,12 +34,15 @@ public class RouteProvided implements Route {
 			LOG.info("Revering Direction..");
 			locationIndex--;
 			forward = false;
+			routeEnded = true;
 		} else if(locationIndex == -1) {
 			//go forward
 			LOG.info("Going Original Direction...");
 			locationIndex++;
 			forward=true;
-		}
+			routeEnded = true;
+		} else
+			routeEnded = false;
 		location = locations.get(locationIndex);
 		nextLocationIndex(); 
 		return location;
@@ -57,6 +60,13 @@ public class RouteProvided implements Route {
 		return this.locations;
 	}
 
-	
+	@Override
+	public boolean routeEnded() {
+		return routeEnded;
+	}
 
+	@Override
+	public String getRouteName() {
+		return routeName;
+	}
 }

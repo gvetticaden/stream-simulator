@@ -14,6 +14,7 @@ public class RouteGenerator implements Route {
 	private List<Location> locations;
 	private int locationIndex=0;
 	private String routeName;
+	private boolean routeEnded = false;
 
 	
 	public RouteGenerator(String routeName, Location startingPoint) {
@@ -39,7 +40,7 @@ public class RouteGenerator implements Route {
 	}
 
 	private Location getNextNewLocation() {
-		LOG.info("Generating new Location for Route...");
+		LOG.debug("Generating new Location for Route...");
 		// Get Previous location
 		Location previousLocation = locations.get(locationIndex - 1);
 		double randomLat = (Math.random() - 0.7D)/10;
@@ -48,14 +49,20 @@ public class RouteGenerator implements Route {
 											previousLocation.getLatitude() + randomLat,
 											previousLocation.getAltitude());
 		locations.add(nextLocation);
-		return nextLocation;
-		
+		return nextLocation;	
 	}
 	
 	public List<Location> getLocations() {
 		return this.locations;
 	}
 
-	
+	@Override
+	public boolean routeEnded() {
+		return routeEnded;
+	}
 
+	@Override
+	public String getRouteName() {
+		return routeName;
+	}
 }
