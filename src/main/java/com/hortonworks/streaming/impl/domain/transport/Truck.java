@@ -58,15 +58,15 @@ public class Truck extends AbstractEventEmitter {
 	public MobileEyeEvent generateEvent() {
 		// If the route has ended, then put the driver in the pool, and get another driver
 		if (getDriver().getRoute().routeEnded() || metersDriven >= TruckConfiguration.END_ROUTE_AFTER_METERS) {
-			Driver myDriver = getDriver();
-				Driver driver = TruckConfiguration.freeDriverPool.poll();
-				if (driver != null)
-					setDriver(driver);
-				else
-					setDriver(TruckConfiguration.getNextDriver());			
-				TruckConfiguration.freeDriverPool.offer(myDriver);
-				metersDriven = 0;
-				lastLocation = null;
+			Integer lastTruckId = new Integer(truckId);
+			Integer nextFreeTruck = TruckConfiguration.freeTruckPool.poll();
+			if (nextFreeTruck != null)
+				truckId = nextFreeTruck.intValue();
+			else
+				truckId = TruckConfiguration.getNextTruckId();			
+			TruckConfiguration.freeTruckPool.offer(lastTruckId);
+			metersDriven = 0;
+			lastLocation = null;
 		}
 		Location nextLocation = getDriver().getRoute().getNextLocation();
 		determineDistanceTraveled(nextLocation);

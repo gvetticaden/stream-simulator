@@ -26,7 +26,7 @@ public class TruckConfiguration {
 	private static List<Location> startingPoints = null;
 	private static Iterator<Location> startingPointIterator = null;
 	public static List<Route> truckRoutes;
-	public static ConcurrentLinkedQueue<Driver> freeDriverPool = new ConcurrentLinkedQueue<Driver>();
+	public static ConcurrentLinkedQueue<Integer> freeTruckPool = new ConcurrentLinkedQueue<Integer>();
 	public static final long END_ROUTE_AFTER_METERS = 241401; // 150 miles
 
 	private static int routeIndex;
