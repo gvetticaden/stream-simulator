@@ -3,38 +3,33 @@ package com.hortonworks.streaming.impl.domain.transport;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Random;
+
+import org.apache.log4j.Logger;
 
 import akka.actor.ActorRef;
 
 import com.hortonworks.streaming.impl.domain.AbstractEventEmitter;
-import com.hortonworks.streaming.impl.domain.gps.BackToTheFutureException;
 import com.hortonworks.streaming.impl.domain.gps.Location;
-import com.hortonworks.streaming.impl.domain.gps.Path;
-import com.hortonworks.streaming.impl.domain.gps.TimestampedLocation;
 import com.hortonworks.streaming.impl.domain.transport.route.Route;
-import com.hortonworks.streaming.impl.domain.transport.route.jaxb.Placemark;
 import com.hortonworks.streaming.impl.messages.EmitEvent;
 
 public class Truck extends AbstractEventEmitter {
 	
 	private static final long serialVersionUID = 9157180698115417087L;
-	private Driver driver;
+	private static final Logger LOG = Logger.getLogger(Truck.class);
 	
+	private Driver driver;
 	private int truckId;
 	private int messageCount = 0;
 	
 	private List<MobileEyeEventTypeEnum> eventTypes;
-	
-	private Random rand = new Random();
 
-	private long metersDriven = 0;
-	private Location lastLocation = null;
 	private int numberOfEventsToGenerate;
 	private long demoId;
 	
+	private Random rand = new Random();
 
 	public Truck(int numberOfEvents, long demoId) {
 		driver = TruckConfiguration.getNextDriver();
@@ -43,33 +38,21 @@ public class Truck extends AbstractEventEmitter {
 		
 		this.numberOfEventsToGenerate = numberOfEvents;
 		this.demoId = demoId;
+		
+		LOG.info("New Truck Instance["+truckId + "] with Driver["+driver.getDriverName()+ "] has started  new Route["+driver.getRoute().getRouteName() + "], RouteId["+ driver.getRoute().getRouteId()+"]");
 	}
 
-
-
-	public Driver getDriver() {
-		return driver;
-	}
-
-	public void setDriver(Driver driver) {
-		this.driver = driver;
-	}
 
 	public MobileEyeEvent generateEvent() {
-		// If the route has ended, then put the driver in the pool, and get another driver
-		if (getDriver().getRoute().routeEnded() || metersDriven >= TruckConfiguration.END_ROUTE_AFTER_METERS) {
-			Integer lastTruckId = new Integer(truckId);
-			Integer nextFreeTruck = TruckConfiguration.freeTruckPool.poll();
-			if (nextFreeTruck != null)
-				truckId = nextFreeTruck.intValue();
-			else
-				truckId = TruckConfiguration.getNextTruckId();			
-			TruckConfiguration.freeTruckPool.offer(lastTruckId);
-			metersDriven = 0;
-			lastLocation = null;
-		}
+		
+		/* If the route has ended, then assign a new truck to the driver. */
+		changeTruckIfRequired();
+		
+		/* Change the route for driver after a period of time */
+		changeDriverRouteIfRequired();
+		
+	
 		Location nextLocation = getDriver().getRoute().getNextLocation();
-		determineDistanceTraveled(nextLocation);
 		if (messageCount % driver.getRiskFactor() == 0)
 			return new MobileEyeEvent(demoId, nextLocation, getRandomUnsafeEvent(),
 					this);
@@ -78,22 +61,64 @@ public class Truck extends AbstractEventEmitter {
 					MobileEyeEventTypeEnum.NORMAL, this);
 	}
 
+
+
+	private void changeDriverRouteIfRequired() {
+		try {
+			if(getDriver().getRouteTraversalCount() > TruckConfiguration.MAX_ROUTE_TRAVERSAL_COUNT) {
+				LOG.info("The Driver["+getDriver().getDriverName() +"] for Truck["+ truckId +"] needs to be have its Route["+getDriver().getRoute().getRouteName()+"] changed.");
+				Route newRoute = TruckConfiguration.freeRoutePool.poll();
+				while(newRoute == null) {
+					LOG.info("The Driver["+getDriver().getDriverName() +"] for Truck["+ truckId +"] is going to wait 5 seconds for a new route to be abailable");
+					Thread.sleep(5000);
+					newRoute = TruckConfiguration.freeRoutePool.poll();
+				}
+				Route oldRoute = getDriver().getRoute();
+				TruckConfiguration.freeRoutePool.offer(oldRoute);
+				LOG.info("The Driver["+getDriver().getDriverName() +"] for Truck["+ truckId +"] releasing old Route["+oldRoute.getRouteName()+"], RouteId["+oldRoute.getRouteId()+"].");
+
+				getDriver().provideRoute(newRoute);
+				LOG.info("The Driver["+getDriver().getDriverName() +"] for Truck["+ truckId +"] found a new Route["+getDriver().getRoute().getRouteName()+"], RouteId["+getDriver().getRoute().getRouteId()+"].");
+			}
+		} catch (Exception e) {
+			LOG.error("Error Changing route for Driver["+getDriver().getDriverName() +"] for Truck["+ truckId +"]");
+		}
+	}
+
+
+
+	private void changeTruckIfRequired() {
+		if (getDriver().getRoute().routeEnded()) {
+			
+			LOG.info("Route has ended for Driver["+getDriver().getDriverId()+"] on Truck["+truckId+"]");
+			Integer lastTruckId = new Integer(truckId);
+			Integer nextFreeTruck = TruckConfiguration.freeTruckPool.poll();
+			
+			//Pick up a new Truck
+			if (nextFreeTruck != null)
+				truckId = nextFreeTruck.intValue();
+			else
+				truckId = TruckConfiguration.getNextTruckId();	
+			
+			TruckConfiguration.freeTruckPool.offer(lastTruckId);
+				
+			
+			//increment the routeTraversal count
+			getDriver().incrementRootTraversalCount();
+			
+			LOG.info("The Driver["+getDriver().getDriverName() +"] has new Truck["+ truckId +"] with["+getDriver().getRoute().getRouteName()+"] traversed " + getDriver().getRouteTraversalCount() + " times.");
+		}
+	}
+
 	private MobileEyeEventTypeEnum getRandomUnsafeEvent() {
 		return eventTypes.get(rand.nextInt(eventTypes.size() - 1));
 	}
 
-	private void determineDistanceTraveled(Location nextLocation) {
-		if (lastLocation != null) {
-			long distance = lastLocation.get3DDistance(nextLocation);
-			metersDriven += distance;
-		}
-		lastLocation = nextLocation;
-	}
 
 	@Override
 	public String toString() {
 		return new Timestamp(new Date().getTime()) + "|" + truckId + "|"
-				+ driver.getDriverId() + "|";
+				+ driver.getDriverId() + "|" + driver.getDriverName() + "|" + driver.getRoute().getRouteId() + "|" + driver.getRoute().getRouteName() + "|";
 	}
 
 	@Override
@@ -106,7 +131,7 @@ public class Truck extends AbstractEventEmitter {
 			if(numberOfEventsToGenerate == -1) {
 				while(true) {
 					messageCount++;
-					Thread.sleep(500 + sleepOffset);
+					Thread.sleep(1000 + sleepOffset);
 					actor.tell(generateEvent(), this.getSender());					
 				}
 				
@@ -115,9 +140,18 @@ public class Truck extends AbstractEventEmitter {
 					messageCount++;
 					Thread.sleep(1000 + sleepOffset);
 					actor.tell(generateEvent(), this.getSender());
-				}				
+				}	
+				LOG.info("Truck["+truckId + "] with Driver["+driver.getDriverName()+ " ] has stopped its route");
 			}
 
 		}
 	}
+	
+	public Driver getDriver() {
+		return driver;
+	}
+
+	public void setDriver(Driver driver) {
+		this.driver = driver;
+	}	
 }

@@ -2,146 +2,98 @@ package com.hortonworks.streaming.impl.domain.transport;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.log4j.Logger;
 
-import com.hortonworks.streaming.impl.domain.gps.Location;
+import com.hortonworks.streaming.datagenerator.DataGeneratorUtils;
 import com.hortonworks.streaming.impl.domain.transport.route.Route;
-import com.hortonworks.streaming.impl.domain.transport.route.RouteGenerator;
 import com.hortonworks.streaming.impl.domain.transport.route.TruckRoutesParser;
 
 public class TruckConfiguration {
 
-	private static Logger logger = Logger.getLogger(TruckConfiguration.class);
+	private static Logger LOGGER = Logger.getLogger(TruckConfiguration.class);
 
-	private static int lastTruckId = 9;
-	private static int nextDriverId = 10;
-
+	public static final long END_ROUTE_AFTER_METERS = 120000; // 75 miles
+	private static final int TRUCK_FLEET_SIZE=100;	
+	private static final int TRUCK_ID_START = 10;
+	public static final int MAX_ROUTE_TRAVERSAL_COUNT = 10;
+	
 	private static Map<Integer, Driver> drivers;
-	private static List<Location> startingPoints = null;
-	private static Iterator<Location> startingPointIterator = null;
-	public static List<Route> truckRoutes;
-	public static ConcurrentLinkedQueue<Integer> freeTruckPool = new ConcurrentLinkedQueue<Integer>();
-	public static final long END_ROUTE_AFTER_METERS = 241401; // 150 miles
+	public static ConcurrentLinkedQueue<Integer> freeTruckPool = null;
+	public static ConcurrentLinkedQueue<Route> freeRoutePool = null;
+	private static List<Integer> trucksOnRoad = new ArrayList<Integer>();
+	
 
-	private static int routeIndex;
-
-	public static void initialize() {
-		lastTruckId = 9;
-		nextDriverId = 10;
-		routeIndex = 0;
+	public static int initialize(String routeDirectoryLocation) {
 		drivers = new HashMap<Integer, Driver>();
-		truckRoutes = null;
-	}
-
-	public static void initialize(String routeDirectoryLocation) {
-		lastTruckId = 9;
-		nextDriverId = 10;
-		routeIndex = 0;
-		drivers = new HashMap<Integer, Driver>();
-		truckRoutes = null;
-
+		trucksOnRoad = new ArrayList<Integer>();
+		DriverStaticList.reset();
+		freeTruckPool = new ConcurrentLinkedQueue<Integer>();
+		freeRoutePool = new ConcurrentLinkedQueue<Route>();
+		
 		parseRoutes(routeDirectoryLocation);
-
+		
+		int numberOfTruckInstances = calculateOptimalNumberOfTruckInstances();
+		
+		configureInitialDrivers();
+		
+		return numberOfTruckInstances;
+		
+	}
+	
+	private static void configureInitialDrivers() {
+		Route route1 = getAvailableRoute();
+		Route route2 = getAvailableRoute();
+	
+		Driver riskyDriver = DriverStaticList.getRiskyDriver();
+		riskyDriver.provideRoute(route1);
+		
+		Driver mostRiskyDriver = DriverStaticList.getMostRiskyDriver();
+		mostRiskyDriver.provideRoute(route2);
 	}
 
-	public static boolean hasRoutes() {
-		return truckRoutes != null && !truckRoutes.isEmpty();
-	}
 
-	public static void parseRoutes(String routeDirectoryLocation) {
-		truckRoutes = new TruckRoutesParser()
+	private static void parseRoutes(String routeDirectoryLocation) {
+		List<Route> truckRoutes = new TruckRoutesParser()
 				.parseAllRoutes(routeDirectoryLocation);
+		LOGGER.info(truckRoutes.size() + " truck Routes were paresed");
+		freeRoutePool.addAll(truckRoutes);
 	}
 
-	public static void configureInitialDrivers() {
-		Route route1;
-		Route route2;
-		Route route3;
-		if (hasRoutes()) {
-			route1 = getNextRoute();
-			route2 = getNextRoute();
-		} else {
-			route1 = new RouteGenerator("route1", new Location(-92.310685,
-					38.933379, 150.0f));
-			route2 = new RouteGenerator("route2", new Location(-90.395569,
-					38.615509, 150.0f));
-		}
-		Driver riskyDriver = new Driver(10, 30, route1);
-		Driver mostRiskyDriver = new Driver(11, 10, route2);
-		drivers.put(10, riskyDriver);
-		drivers.put(11, mostRiskyDriver);
+
+	private synchronized static Route getAvailableRoute() {
+		return freeRoutePool.poll();
 	}
-
-	public static void configureStartingPoints() {
-		startingPoints = new ArrayList<Location>();
-
-		// Kansas City, 39.133616 -94.747812
-		startingPoints.add(new Location(-94.747812, 39.133616, 150.0f));
-
-		// SpringField IL, 39.802787, -89.651201
-		startingPoints.add(new Location(-89.651201, 39.802787, 220.0f));
-
-		// Evansville, IL 37.998016, -87.5836
-		startingPoints.add(new Location(-87.5836, 37.998016, 20.0f));
-
-		// SpringField, MO, 37.238909, -93.33455
-		startingPoints.add(new Location(-93.33455, 37.238909, 20.0f));
-
-		// Joplin, MO 37.060655, -94.495437
-		startingPoints.add(new Location(-94.495437, 37.060655, 20.0f));
-
-		// Other, MO, 39.57182223734374, -91.25244140624999
-		startingPoints.add(new Location(-91.25244140624999, 39.57182223734374,
-				20.0f));
-
-		// Other, MO 37.52715361723378, -90.28564453124999
-		startingPoints.add(new Location(-90.28564453124999, 37.52715361723378,
-				20.0f));
-
-		startingPointIterator = startingPoints.iterator();
-	}
-
-	private static Route getNextRoute() {
-		Route route = truckRoutes.get(routeIndex);
-		routeIndex++;
-		return route;
-	}
-
+	
 	public synchronized static int getNextTruckId() {
-		lastTruckId++;
-		return lastTruckId;
-	}
+		int nextTruckId = DataGeneratorUtils.getRandomIntBetween(TRUCK_ID_START, TRUCK_ID_START + TRUCK_FLEET_SIZE, trucksOnRoad);
+		trucksOnRoad.add(nextTruckId);
+		return nextTruckId;
+	}	
 
 	public synchronized static Driver getNextDriver() {
-		Driver nextDriver = drivers.get(nextDriverId);
-		if (nextDriver == null) {
-			if (hasRoutes()) {
-				Route route = getNextRoute();
-				nextDriver = new Driver(nextDriverId, 100, route);
-			} else {
-				Route route = new RouteGenerator("routex",
-						getNextStartingPoint());
-				nextDriver = new Driver(nextDriverId, 100, route);
-			}
-
-			drivers.put(nextDriverId, nextDriver);
+		Driver nextDriver = DriverStaticList.next();
+		
+		//if driver has route, then it must be the risky drivers, so don't provide new route..
+		if(nextDriver.getRoute() == null) {
+			Route route = getAvailableRoute();
+			nextDriver.provideRoute(route);				
 		}
-		logger.debug("Next Driver: " + nextDriver.toString());
-		nextDriverId++;
+		
+		drivers.put(nextDriver.getDriverId(), nextDriver);
+		LOGGER.debug("Next Driver: " + nextDriver.toString());
 		return nextDriver;
 	}
 
-	public synchronized static Location getNextStartingPoint() {
-		if (startingPointIterator.hasNext())
-			return startingPointIterator.next();
-		else
-			startingPointIterator = startingPoints.iterator();
-		return getNextStartingPoint();
+	private static int calculateOptimalNumberOfTruckInstances() {
+		int value = (int) (freeRoutePool.size() * .99);
+		LOGGER.info("For " + freeRoutePool.size() + ", the optimal Number of Truck Instances  are: " + value );
+		return value;
+		
 	}
+
+
 }

@@ -13,6 +13,7 @@
 		<jackson.version>1.9.3</jackson.version>
 		<junit.version>4.5</junit.version>
 	</properties>
+	
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
@@ -40,6 +41,11 @@
 			<artifactId>activemq-core</artifactId>
 			<version>5.7.0</version>
 		</dependency>
+		<dependency>
+		    <groupId>commons-codec</groupId>
+		    <artifactId>commons-codec</artifactId>
+		    <version>1.4</version>
+		</dependency>		
 		
 		<!-- Kafka dependencies -->
 		

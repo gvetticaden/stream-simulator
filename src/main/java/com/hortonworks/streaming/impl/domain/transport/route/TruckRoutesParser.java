@@ -3,8 +3,11 @@ package com.hortonworks.streaming.impl.domain.transport.route;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -16,6 +19,7 @@ import javax.xml.transform.stream.StreamSource;
 import org.apache.log4j.Logger;
 
 import com.hortonworks.streaming.impl.domain.gps.Location;
+import com.hortonworks.streaming.impl.domain.transport.TruckConfiguration;
 import com.hortonworks.streaming.impl.domain.transport.route.jaxb.Kml;
 import com.hortonworks.streaming.impl.domain.transport.route.jaxb.Placemark;
 
@@ -24,6 +28,7 @@ import com.hortonworks.streaming.impl.domain.transport.route.jaxb.Placemark;
 public class TruckRoutesParser {
 	
 	private static final Logger LOG = Logger.getLogger(TruckRoutesParser.class);
+	private static final DecimalFormat numberFormat = new DecimalFormat("#.00");
 
 	public Route parseRoute(String routeFile) {
         LOG.info("Processing Route File["+routeFile+"]");
@@ -43,7 +48,9 @@ public class TruckRoutesParser {
 			for(Placemark placemark:kml.getDocument().getPlacemark()) {
 				String coordinates = placemark.getPoint().getCoordinates();
 				String[] coord = coordinates.split(",");
-				locations.add(new Location(Double.valueOf(coord[0]), Double.valueOf(coord[1]), 0));
+				String latitude = numberFormat.format(Double.valueOf(coord[0]));
+				String longitude = numberFormat.format(Double.valueOf(coord[1]));
+				locations.add(new Location(Double.valueOf(latitude), Double.valueOf(longitude), 0));
 			}
 			LOG.info("Route File["+routeFile +"] has " + locations.size() + " coordinates in the route "); 
 			route = new RouteProvided(routeName, locations);
@@ -61,9 +68,12 @@ public class TruckRoutesParser {
 	
 	public List<Route> parseAllRoutes(String directoryName) {
 		List<Route> routes = new ArrayList<>();
-		File file = new File(directoryName);
-		for(File routeFile: file.listFiles()) {
-			if(routeFile.getPath().endsWith(".xml")) {
+		File directory = new File(directoryName);
+		File[] files =  directory.listFiles();
+		Arrays.sort(files);
+		
+		for(File routeFile: files) {
+			if(routeFile.getPath().endsWith(".kml")) {
 				routes.add(parseRoute(routeFile.getPath()));
 			}
 		}

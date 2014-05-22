@@ -16,21 +16,8 @@ public class App {
 	public static void main(String[] args) {
 			try {
 				
-				int emitters = 0;
-				if(args.length == 5) {
-					TruckConfiguration.initialize();
-					TruckConfiguration.configureInitialDrivers();
-					TruckConfiguration.configureStartingPoints();
-					emitters = Integer.parseInt(args[0]);			
-					
-				} else if(args.length == 6) {
-					String routesDirectory = args[5];
-					TruckConfiguration.initialize(routesDirectory);
-					TruckConfiguration.configureInitialDrivers();
-					TruckConfiguration.configureStartingPoints();
-					emitters=TruckConfiguration.truckRoutes.size();				
-				}
-
+				String routesDirectory = args[5];
+				int emitters = TruckConfiguration.initialize(routesDirectory);
 				
 				final Class eventEmitterClass = Class.forName(args[2]);
 				final Class eventCollectorClass = Class.forName(args[3]);

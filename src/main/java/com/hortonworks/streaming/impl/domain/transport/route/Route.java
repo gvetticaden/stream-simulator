@@ -9,5 +9,6 @@ public interface Route {
 	Location getNextLocation();
 	Location getStartingPoint();
 	boolean routeEnded();
+	int getRouteId();
 	String getRouteName();
 }

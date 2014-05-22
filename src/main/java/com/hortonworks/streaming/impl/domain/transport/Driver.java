@@ -1,6 +1,5 @@
 package com.hortonworks.streaming.impl.domain.transport;
 
-import com.hortonworks.streaming.impl.domain.gps.TimestampedLocation;
 import com.hortonworks.streaming.impl.domain.transport.route.Route;
 import com.hortonworks.streaming.interfaces.DomainObject;
 
@@ -10,14 +9,23 @@ public class Driver implements DomainObject {
 	private int driverId;
 	private int riskFactor;
 	private Route route;
+	
+	private int routeTraversalCount = 0;
 
-	public Driver(int driverId, int riskFactor,
-				  Route route) {
+	private String driverName;
+
+	public Driver(int driverId, String driverName, int riskFactor) {
 		this.driverId = driverId;
 		this.riskFactor = riskFactor;
-		this.route = route;
+		this.setDriverName(driverName);
+
 	}
 
+	public void provideRoute(Route route) {
+		this.route = route;
+		routeTraversalCount = 1;
+	}
+	
 	public int getDriverId() {
 		return driverId;
 	}
@@ -41,6 +49,22 @@ public class Driver implements DomainObject {
 
 	public Route getRoute() {
 		return route;
+	}
+
+	public String getDriverName() {
+		return driverName;
+	}
+
+	public void setDriverName(String driverName) {
+		this.driverName = driverName;
+	}
+	
+	public void incrementRootTraversalCount() {
+		this.routeTraversalCount++;
+	}
+	
+	public int getRouteTraversalCount() {
+		return this.routeTraversalCount;
 	}
 
 }

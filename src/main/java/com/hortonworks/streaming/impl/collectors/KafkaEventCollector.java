@@ -41,7 +41,7 @@ public class KafkaEventCollector extends AbstractEventCollector {
 		String eventToPass = mee.toString();
 		String driverId = String.valueOf(mee.getTruck().getDriver().getDriverId());
 		
-		logger.info("Creating event["+eventToPass+"] for driver["+driverId + "] in truck [" + mee.getTruck() + "]");
+		logger.debug("Creating event["+eventToPass+"] for driver["+driverId + "] in truck [" + mee.getTruck() + "]");
 		
 		try {
 			KeyedMessage<String, String> data = new KeyedMessage<String, String>(TOPIC, driverId, eventToPass);

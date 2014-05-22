@@ -13,9 +13,11 @@ public class RouteProvided implements Route {
 	
 	private List<Location> locations;
 	private int locationIndex=0;
-	private String routeName;
+	private Integer routeId;
 	private boolean forward=true;
 	private boolean routeEnded=false;
+
+	private String routeName;
 
 	
 	public RouteProvided (String routeName, List<Location> locations) {
@@ -65,8 +67,15 @@ public class RouteProvided implements Route {
 		return routeEnded;
 	}
 
-	@Override
-	public String getRouteName() {
-		return routeName;
+	public int getRouteId() {
+		if(routeId == null) {
+			routeId = Math.abs(routeName.hashCode());
+		}
+		return routeId;
 	}
+	
+	public String getRouteName() {
+		return this.routeName;
+	}
+
 }
