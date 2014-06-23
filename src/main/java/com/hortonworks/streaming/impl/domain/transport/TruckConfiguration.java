@@ -27,7 +27,7 @@ public class TruckConfiguration {
 	private static List<Integer> trucksOnRoad = new ArrayList<Integer>();
 	
 
-	public static int initialize(String routeDirectoryLocation) {
+	public static void initialize(String routeDirectoryLocation) {
 		drivers = new HashMap<Integer, Driver>();
 		trucksOnRoad = new ArrayList<Integer>();
 		DriverStaticList.reset();
@@ -36,11 +36,11 @@ public class TruckConfiguration {
 		
 		parseRoutes(routeDirectoryLocation);
 		
-		int numberOfTruckInstances = calculateOptimalNumberOfTruckInstances();
-		
 		configureInitialDrivers();
 		
-		return numberOfTruckInstances;
+		//int numberOfTruckInstances = calculateOptimalNumberOfTruckInstances();
+		
+		//return numberOfTruckInstances;
 		
 	}
 	

@@ -20,7 +20,7 @@ public class KafkaEventCollector extends AbstractEventCollector {
 	public KafkaEventCollector() {
         Properties props = new Properties();
         //props.put("metadata.broker.list", "gvetticaden-kafka-cluster.secloud.hortonworks.com:9092,gvetticaden-kafka-cluster2.secloud.hortonworks.com:9092");
-        props.put("metadata.broker.list", "hadoopsummit-kafka.secloud.hortonworks.com:9092,hadoopsummit-kafka2.secloud.hortonworks.com:9092");
+        props.put("metadata.broker.list", "george-kafka01.cloud.hortonworks.com:9092,george-kafka02.cloud.hortonworks.com:9092");
 
         props.put("serializer.class", "kafka.serializer.StringEncoder");
         props.put("request.required.acks", "1");

@@ -17,20 +17,32 @@ public class App {
 			try {
 				
 				String routesDirectory = args[5];
-				int emitters = TruckConfiguration.initialize(routesDirectory);
+				
 				
 				final Class eventEmitterClass = Class.forName(args[2]);
 				final Class eventCollectorClass = Class.forName(args[3]);
+				
+				
 				final long demoId = Long.parseLong(args[4]);
-				final int numberOfEventEmitters = emitters;
+				
+				TruckConfiguration.initialize(routesDirectory);
+				final int numberOfEventEmitters=TruckConfiguration.freeRoutePool.size();
+				
+				System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& heck yeah..." + numberOfEventEmitters);
+				
 				final int numberOfEvents = Integer.parseInt(args[1]);	
 
 				ActorSystem system = ActorSystem.create("EventSimulator");
+				
+				
+				
 				final ActorRef listener = system.actorOf(
 						Props.create(SimulatorListener.class), "listener");
 				final ActorRef eventCollector = system.actorOf(
 						Props.create(eventCollectorClass), "eventCollector");
 				System.out.println(eventCollector.path());
+				
+				
 				final ActorRef master = system.actorOf(new Props(
 						new UntypedActorFactory() {
 							public UntypedActor create() {
@@ -39,11 +51,7 @@ public class App {
 										eventEmitterClass, listener, numberOfEvents, demoId);
 							}
 						}), "master");
-				Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-					public void run() {
-						master.tell(new StopSimulation(), master);
-					}
-				}));
+				
 				master.tell(new StartSimulation(), master);
 			} catch (NumberFormatException e) {
 				System.err.println("Invalid number of emitters: "

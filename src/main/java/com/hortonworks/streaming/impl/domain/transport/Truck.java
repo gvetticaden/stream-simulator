@@ -139,7 +139,8 @@ public class Truck extends AbstractEventEmitter {
 				while (messageCount < numberOfEventsToGenerate) {
 					messageCount++;
 					Thread.sleep(1000 + sleepOffset);
-					actor.tell(generateEvent(), this.getSender());
+					MobileEyeEvent event = generateEvent();
+					actor.tell(event, this.getSender());
 				}	
 				LOG.info("Truck["+truckId + "] with Driver["+driver.getDriverName()+ " ] has stopped its route");
 			}
