@@ -28,16 +28,19 @@ public class Truck extends AbstractEventEmitter {
 
 	private int numberOfEventsToGenerate;
 	private long demoId;
+	private int delayBetweenEvents = 1000;
 	
 	private Random rand = new Random();
 
-	public Truck(int numberOfEvents, long demoId) {
+	public Truck(int numberOfEvents, long demoId, int delayBetweenEvents) {
 		driver = TruckConfiguration.getNextDriver();
 		truckId = TruckConfiguration.getNextTruckId();
 		eventTypes = Arrays.asList(MobileEyeEventTypeEnum.values());
+	
 		
 		this.numberOfEventsToGenerate = numberOfEvents;
 		this.demoId = demoId;
+		this.delayBetweenEvents = delayBetweenEvents;
 		
 		LOG.info("New Truck Instance["+truckId + "] with Driver["+driver.getDriverName()+ "] has started  new Route["+driver.getRoute().getRouteName() + "], RouteId["+ driver.getRoute().getRouteId()+"]");
 	}
@@ -131,14 +134,14 @@ public class Truck extends AbstractEventEmitter {
 			if(numberOfEventsToGenerate == -1) {
 				while(true) {
 					messageCount++;
-					Thread.sleep(1000 + sleepOffset);
+					Thread.sleep(delayBetweenEvents + sleepOffset);
 					actor.tell(generateEvent(), this.getSender());					
 				}
 				
 			} else {
 				while (messageCount < numberOfEventsToGenerate) {
 					messageCount++;
-					Thread.sleep(1000 + sleepOffset);
+					Thread.sleep(delayBetweenEvents + sleepOffset);
 					MobileEyeEvent event = generateEvent();
 					actor.tell(event, this.getSender());
 				}	

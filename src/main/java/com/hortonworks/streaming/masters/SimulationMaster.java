@@ -24,7 +24,7 @@ public class SimulationMaster extends UntypedActor {
 
 	@SuppressWarnings("unchecked")
 	public SimulationMaster(int numberOfEventEmitters, Class eventEmitterClass,
-			ActorRef listener, int numberOfEvents, long demoId) {
+			ActorRef listener, int numberOfEvents, long demoId, int delayBetweenEvents) {
 		logger.info("Starting simulation with " + numberOfEventEmitters
 				+ " of " + eventEmitterClass + " Event Emitters -- "
 				+ eventEmitterClass.toString());
@@ -32,7 +32,7 @@ public class SimulationMaster extends UntypedActor {
 		this.numberOfEventEmitters = numberOfEventEmitters;
 		this.eventEmitterClass = eventEmitterClass;
 		eventEmitterRouter = this.getContext().actorOf(
-				Props.create(eventEmitterClass, numberOfEvents, demoId).withRouter(
+				Props.create(eventEmitterClass, numberOfEvents, demoId, delayBetweenEvents).withRouter(
 						new RoundRobinRouter(numberOfEventEmitters)),
 				"eventEmitterRouter");
 	}

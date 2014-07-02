@@ -17,6 +17,7 @@ public class App {
 			try {
 				
 				String routesDirectory = args[5];
+				final int delayBetweenEvents = Integer.valueOf(args[6]);
 				
 				
 				final Class eventEmitterClass = Class.forName(args[2]);
@@ -48,7 +49,7 @@ public class App {
 							public UntypedActor create() {
 								return new SimulationMaster(
 										numberOfEventEmitters,
-										eventEmitterClass, listener, numberOfEvents, demoId);
+										eventEmitterClass, listener, numberOfEvents, demoId, delayBetweenEvents);
 							}
 						}), "master");
 				
