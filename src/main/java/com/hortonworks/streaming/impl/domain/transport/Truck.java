@@ -5,6 +5,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
+import javax.xml.datatype.Duration;
 
 import org.apache.log4j.Logger;
 
@@ -15,7 +18,7 @@ import com.hortonworks.streaming.impl.domain.gps.Location;
 import com.hortonworks.streaming.impl.domain.transport.route.Route;
 import com.hortonworks.streaming.impl.messages.EmitEvent;
 
-public class Truck extends AbstractEventEmitter {
+public class Truck extends AbstractEventEmitter{
 	
 	private static final long serialVersionUID = 9157180698115417087L;
 	private static final Logger LOG = Logger.getLogger(Truck.class);
@@ -28,19 +31,18 @@ public class Truck extends AbstractEventEmitter {
 
 	private int numberOfEventsToGenerate;
 	private long demoId;
-	private int delayBetweenEvents = 1000;
+	private int messageDelay;
 	
 	private Random rand = new Random();
 
-	public Truck(int numberOfEvents, long demoId, int delayBetweenEvents) {
+	public Truck(int numberOfEvents, long demoId, int messageDelay) {
+		this.messageDelay = messageDelay;
 		driver = TruckConfiguration.getNextDriver();
 		truckId = TruckConfiguration.getNextTruckId();
 		eventTypes = Arrays.asList(MobileEyeEventTypeEnum.values());
-	
 		
 		this.numberOfEventsToGenerate = numberOfEvents;
 		this.demoId = demoId;
-		this.delayBetweenEvents = delayBetweenEvents;
 		
 		LOG.info("New Truck Instance["+truckId + "] with Driver["+driver.getDriverName()+ "] has started  new Route["+driver.getRoute().getRouteName() + "], RouteId["+ driver.getRoute().getRouteId()+"]");
 	}
@@ -104,7 +106,7 @@ public class Truck extends AbstractEventEmitter {
 				truckId = TruckConfiguration.getNextTruckId();	
 			
 			TruckConfiguration.freeTruckPool.offer(lastTruckId);
-				
+					
 			
 			//increment the routeTraversal count
 			getDriver().incrementRootTraversalCount();
@@ -126,29 +128,36 @@ public class Truck extends AbstractEventEmitter {
 
 	@Override
 	public void onReceive(Object message) throws Exception {
+		
 		if (message instanceof EmitEvent) {
+			//the next message will be sent roughly messageDelay ms after the previous
+			//randomly shave off 0-25% of that delay
+			//this allows for streams to deviate from one another instead of moving in lock-step
+			double offset_factor = rand.nextDouble() * 0.25;
+			long adjusted_delay = (long) (messageDelay - (offset_factor * messageDelay));
+			
 			ActorRef actor = this.context().system()
 					.actorFor("akka://EventSimulator/user/eventCollector");
-			Random rand = new Random();
-			int sleepOffset = rand.nextInt(200);
+			
+			
 			if(numberOfEventsToGenerate == -1) {
-				while(true) {
-					messageCount++;
-					Thread.sleep(delayBetweenEvents + sleepOffset);
-					actor.tell(generateEvent(), this.getSender());					
-				}
-				
+				messageCount++;
+				actor.tell(generateEvent(), this.getSender());	
+				this.context().system().scheduler().scheduleOnce(scala.concurrent.duration.Duration.create(adjusted_delay, TimeUnit.MILLISECONDS), this.getSelf(), new EmitEvent(), this.context().system().dispatcher(), this.getSelf());
+			}else if (messageCount < numberOfEventsToGenerate) {
+				messageCount++;
+				actor.tell(generateEvent(), this.getSender());
+				this.context().system().scheduler().scheduleOnce(scala.concurrent.duration.Duration.create(adjusted_delay, TimeUnit.MILLISECONDS), this.getSelf(), new EmitEvent(), this.context().system().dispatcher(), this.getSelf());
+					
 			} else {
-				while (messageCount < numberOfEventsToGenerate) {
-					messageCount++;
-					Thread.sleep(delayBetweenEvents + sleepOffset);
-					MobileEyeEvent event = generateEvent();
-					actor.tell(event, this.getSender());
-				}	
 				LOG.info("Truck["+truckId + "] with Driver["+driver.getDriverName()+ " ] has stopped its route");
+				
 			}
+	
 
 		}
+		
+
 	}
 	
 	public Driver getDriver() {
@@ -157,5 +166,5 @@ public class Truck extends AbstractEventEmitter {
 
 	public void setDriver(Driver driver) {
 		this.driver = driver;
-	}	
+	}
 }
